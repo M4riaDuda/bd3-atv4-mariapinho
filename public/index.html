@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Fórum: Slime Rancher 🍓</title>
+        <link rel="stylesheet" href="./styles.css">
+        <link rel="icon" href="./images/slime_rosa.png">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.js"></script>
+    </head>
+
+    <body>
+        <script src="socket.io/socket.io.js"></script>
+        <div class="header_container">
+            <img src="./images/logo.png" />
+            <h1>SLIME RANCHER FÓRUM</h1>
+        </div>
+        <div class="button_post_container">
+            <button name="btn_post" id="btn_post">POST</button>
+        </div>
+        <div class="posts_container"></div>
+
+        <!-- ESTRUTURA HTML DO FORMULÁRIO MODAL: -->
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div class="form_post_container">
+                    <h3>FAÇA UM POST</h3>
+
+                    <form name="frm_post" id="frm_post">
+                        <input type="text" name="txt_titulo" id="txt_titulo" placeholder="Título do post">
+                        <br />
+                        <input type="text" name="txt_post" id="txt_post"  placeholder="Texto">
+                        <br />
+                        <button name="btn_postar" id="btn_postar">POSTAR</button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </body>
+
+    <script>
+
+        /***** ABERTURA/FECHAMENTO DO FORMUÁRIO MODAL *****/
+        let btn = document.getElementById('btn_post');
+        let modal = document.getElementById("myModal");
+        let span = document.getElementsByClassName("close")[0];
+
+        //ABRE O FORMULÁRIO MODAL:
+        btn.addEventListener('click', function (event) {
+            event.preventDefault();
+            modal.style.display = "block";
+        });
+
+        //FECHA O FORMULÁRIO MODAL:
+        span.addEventListener('click', function(event){
+            modal.style.display = "none";
+        });
+        
+        const socket = io('http://localhost:3000')
+
+        function renderPost(post){
+            $('.posts_container').append(`
+            <div class="post_container">
+                <span>${post.titulo}</span>
+                <br/>
+                <p>${post.post}</p>
+                <p>${post.data_hora}</p>
+                </div>`);
+        }
+
+        socket.on('previousPosts', function(posts){
+            for(post of posts){
+                renderPost(post);
+            }
+        });
+
+        socket.on('receivedPosts', function(post){
+            renderPost(post);
+        });
+
+        $('#frm_post').submit(function(event){
+            event.preventDefault()
+
+            var titulo = $('input[name=txt_titulo]').val();
+            var post = $('input[name=txt_post]').val();
+
+            let data_hora_obj = new Date()
+            let data_hora_post = `[${data_hora_obj.toLocaleDateString()} - ${data_hora_obj.toLocaleTimeString()}]`
+
+            var postObject = {
+                titulo: titulo,
+                post: post,
+                data_hora: data_hora_post
+            }
+
+            renderPost(postObject)
+            socket.emit('sendPost', postObject)
+
+            console.log('JSON' + JSON.stringify(postObject))
+        });
+
+    </script>
+
+</html>
